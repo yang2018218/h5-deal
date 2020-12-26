@@ -1,0 +1,82 @@
+/* 
+ 全局css样式 
+ */
+.text_center {
+	text-align: center;
+}
+
+.bulk_style {
+	display: inline-block;
+}
+
+.font_size {
+	font-size: 28rpx;
+}
+
+.background_padding {
+	padding: 0 24rpx;
+}
+
+.background_color {
+	background-color: #f5f5f5;
+}
+
+.shenglue {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.uni-picker-container .uni-picker-action.uni-picker-action-confirm {
+	color: #11D48D !important;
+}
+
+.color_333 {
+	color: #333;
+}
+
+.color_666 {
+	color: #666;
+}
+
+.color_999 {
+	color: #999;
+}
+.color_sd{
+	color: #11D48D;
+}
+.color_e53e27{
+	color: #E53E27;
+}
+.ft_size_52 {
+	font-size: 52rpx;
+}
+.ft_size_34 {
+	font-size: 34rpx;
+}
+
+.ft_size_32 {
+	font-size: 32rpx;
+}
+
+.ft_size_28 {
+	font-size: 28rpx;
+}
+
+.ft_size_26 {
+	font-size: 26rpx;
+}
+
+.ft_size_24 {
+	font-size: 24rpx;
+}
+.ft_size_22 {
+	font-size: 22rpx;
+}
+
+.df_fl_center {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+

@@ -1,0 +1,175 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/login/login",
+
+			"style": {
+				"navigationBarTitleText": "登录页",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+
+			"path": "pages/Home/Home",
+			"style": {
+				"navigationBarTitleText": "供求信息匹配",
+				"navigationStyle": "custom"
+			}
+		},
+
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "聊一聊"
+			}
+		},
+		{
+			"path": "pages/tim/record",
+			"style": {
+				"navigationBarTitleText": "会话页"
+			}
+		},
+		{
+			"path": "pages/tim/room",
+			"style": {
+				"navigationBarTitleText": "聊天室",
+				"app-plus": { //修复聊天页 app端输入法上顶问题
+					"softinputMode": "adjustResize"
+				}
+			}
+		},
+		{
+			"path": "pages/my/my",
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
+		}, {
+			"path": "pages/pipei/pipei",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		}, {
+			"path": "pages/tongzhi/tongzhi",
+			"style": {
+				"navigationBarTextStyle": "black",
+				"navigationBarBackgroundColor": "#f5f5f5",
+				"navigationBarTitleText": "通知"
+			}
+		}, {
+			"path": "pages/searchPage/searchPage",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		}, {
+			"path": "pages/chaigou/chaigou",
+			"style": {
+				"navigationBarTitleText": "发布采购",
+				"navigationBarTextStyle": "black",
+				"navigationBarBackgroundColor": "#f5f5f5"
+
+			}
+		}, {
+			"path": "pages/productType/productType",
+			"style": {
+				// "navigationBarTitleText":"采购商品"
+				"navigationStyle": "custom",
+				"scrollIndicator": "none"
+			}
+		}, {
+			"path": "pages/fourKind/fourKind",
+			"style": {
+				"navigationBarTextStyle": "black",
+				"navigationBarBackgroundColor": "#F5F5F5",
+				"navigationBarTitleText": "选择品种"
+			}
+		}, {
+			"path": "pages/sitePage/sitePage",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		}, {
+			"path": "pages/addSite/addSite",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		}
+	    ,{
+            "path" : "pages/publishPage/publishPage",
+            "style" : {
+				"navigationBarTextStyle": "black",
+				"navigationBarBackgroundColor": "#F5F5F5",
+				"navigationBarTitleText": "发布供应"
+			}
+        }
+        ,{
+            "path" : "pages/agreementPage/agreementPage",
+            "style" : {}
+        }
+        ,{
+            "path" : "pages/supplyPrice/supplyPrice",
+            "style" : {
+				"navigationBarTextStyle": "black",
+				"navigationBarBackgroundColor": "#F5F5F5",
+				"navigationBarTitleText": "商品价格"
+			}
+        }
+        ,{
+            "path" : "pages/caigouDetails/caigouDetails",
+            "style" : {
+				"navigationBarTextStyle": "black",
+				"navigationBarBackgroundColor": "#F5F5F5",
+				"navigationBarTitleText": "采购详情"
+			}
+        }
+        ,{
+            "path" : "pages/selectId/selectId",
+            "style" : {
+				"navigationBarTextStyle": "black",
+				"navigationBarBackgroundColor": "#FFFFFF",
+				"navigationBarTitleText": "选择身份"
+			}
+        }
+        ,{
+            "path" : "pages/mainProfession/mainProfession",
+            "style" : {
+				"navigationBarTextStyle": "black",
+				"navigationBarBackgroundColor": "#FFFFFF",
+				"navigationBarTitleText": "主营业务"
+			}
+        }
+    ],
+	"tabBar": {
+		"color": "#7a7e83",
+		"selectedColor": "#0faeff",
+		"backgroundColor": "#ffffff",
+		"list": [{
+				"pagePath": "pages/tim/record",
+				"text": "聊一聊",
+				"iconPath": "static/img/tabBar/chat.png",
+				"selectedIconPath": "static/img/tabBar/chatclick.png"
+			},
+			{
+				"pagePath": "pages/Home/Home",
+				"text": "供求",
+				"iconPath": "static/img/tabBar/hangqing.png",
+				"selectedIconPath": "static/img/tabBar/hangqingclick.png"
+
+			},
+			{
+				"pagePath": "pages/my/my",
+				"text": "我的",
+				"iconPath": "static/img/tabBar/my.png",
+				"selectedIconPath": "static/img/tabBar/my_click.png"
+
+			}
+
+		]
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarBackgroundColor": "#11D48D",
+		"backgroundColor": "#fbf9fe"
+
+
+	}
+}

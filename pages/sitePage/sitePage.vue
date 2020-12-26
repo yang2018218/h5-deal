@@ -1,0 +1,249 @@
+<template>
+	<view class=" background_color selectSitePage" style="height: 100%;">
+		<view class="tabTop">
+			<text class="iconfont icon-xiangzuo" @click="returnBack()"></text>
+			<span>{{title}}</span>
+		</view>
+		<view v-if="siteHave" class="sitePage background_padding">
+			<scroll-view scroll-y="true" style="height: 1066rpx;">
+
+				<view v-for="(item,index) in siteList" :key="index" class="siteBox">
+					<view class="left" @click="goaddsite(item)">
+						<view class="site_top">
+							<text v-if="item.isDefault=='1'" class="moren">默认</text>
+							<text class="name">{{item.linkman}}</text>
+							<text class="mobile name">{{item.mobile}}</text>
+						</view>
+						<view class="site_bottom shenglue">
+							<text>{{item.province}}{{item.city}}{{item.area}}{{item.address}}</text>
+						</view>
+					</view>
+					<view class="right ">
+						<text class="iconfont icon-xiugai" @click="amend(item)"></text>
+					</view>
+				</view>
+			</scroll-view>
+		</view>
+		<view class="bottom">
+			<text @click="addsite()">新增地址</text>
+		</view>
+
+		<view v-if="!siteHave">
+			糟了，你还没有地址，赶紧去添加吧！
+		</view>
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				typeInfo: '', //供应还是求购区分
+				siteList: [], //求购地址
+				siteHave: true, //默认为有地址
+				title: '',
+			}
+		},
+		onLoad(opt) {
+			console.log(opt, 'opt...')
+			this.typeInfo = opt.type
+
+		},
+		onReady() {
+			console.log("是否刷新..")
+			this.getAskToBuy()
+			console.log(uni.getStorageSync("userId"))
+
+		},
+		methods: {
+			// 刷新事件
+			refreshRequest() {
+				console.log(this.typeInfo, "刷新事件...")
+				this.getAskToBuy()
+			},
+			// 添加地址
+			goaddsite(item) {
+				if (this.typeInfo == '2'){
+					uni.setStorageSync("purchase", item)
+				}else{
+					// 这里
+					uni.setStorageSync("gongyingsite", item)
+				}
+				
+				let pages = getCurrentPages(); // 当前页面
+				let beforePage = pages[pages.length - 2]; // 前一个页面
+				console.log("beforePage", beforePage);
+				console.log(pages);
+				uni.navigateBack({
+					delta: 1,
+					success: function() {
+						beforePage.$vm.caigoureshRequest(); // 执行前一个页面的刷新
+					}
+				});
+
+			},
+			// 返回
+			returnBack() {
+				uni.navigateBack({
+					delta: 1
+				});
+			},
+			// 修改
+			amend(item) {
+				console.log(item)
+				uni.navigateTo({
+					url: '/pages/addSite/addSite?item=' + JSON.stringify(item)
+				})
+			},
+			// 新增地址
+			addsite() {
+				uni.navigateTo({
+					url: "/pages/addSite/addSite?item=0&type=" + this.typeInfo
+				})
+			},
+			// 搜索地址
+			getAskToBuy() {
+				if (this.typeInfo == "2") {
+					this.title = '选择采购地址'
+				} else if (this.typeInfo == "1") {
+					this.title = "选择供应地址"
+				} else {
+					this.title = "选择地址"
+				}
+
+				if (this.typeInfo == "2") {
+					this.$http.get('deal/address/purchaseInfo', {
+						params: {}
+					}).then(data => {
+						if (data && data.code==0) {
+							console.log(data, '用户地址')
+							if (data.result.length == 0) {
+								this.siteHave = false
+							} else {
+								this.siteHave = true
+								this.siteList = data.result
+							}
+						}
+					}).catch(err => {})
+				} else {
+
+					this.$http.get('deal/address/supplyInfo', {
+						params: {}
+					}).then(data => {
+						if (data && data.code==0) {
+							console.log(data, '用户地址')
+							if (data.result.length == 0) {
+								this.siteHave = false
+							} else {
+								this.siteHave = true
+								this.siteList = data.result
+							}
+						}
+					}).catch(err => {})
+
+				}
+
+
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	page {
+		height: 100%;
+	}
+
+	.selectSitePage {
+		.tabTop {
+			padding: 35rpx 24rpx 47rpx 24rpx;
+			display: flex;
+
+			text {
+				font-size: 42rpx;
+				color: #666;
+				flex: 1;
+			}
+
+			span {
+				flex: auto;
+				font-size: 36rpx;
+				font-weight: bold;
+				color: #333333;
+			}
+		}
+	}
+
+	.background_color {
+		position: relative;
+	}
+
+	.sitePage {
+		// padding-top: 47rpx;
+
+		.siteBox {
+			margin-bottom: 30rpx;
+			background-color: #FFFFFF;
+			height: 134rpx;
+			border-radius: 10px;
+			display: flex;
+			padding: 27rpx 28rpx 23rpx 27rpx;
+
+			.moren {
+				display: inline-block;
+				padding: 5rpx 12rpx;
+				background-color: #5BC7A6;
+				font-size: 24rpx;
+				color: #FEFEFE;
+			}
+
+			.name {
+				font-size: 30rpx;
+				font-weight: 500;
+				color: #333333;
+				margin-left: 15rpx;
+			}
+
+			.mobile {
+				margin-left: 40rpx;
+			}
+
+			.right {
+				display: flex;
+				align-items: center;
+				float: right;
+			}
+		}
+
+		.left {
+			width: 620rpx;
+
+			.site_bottom {
+				margin-top: 25rpx;
+				color: #999999;
+				font-size: 26rpx;
+				width: 600rpx;
+			}
+		}
+	}
+
+	.bottom {
+		position: absolute;
+		bottom: 0;
+		background-color: #FFFFFF;
+		text-align: center;
+		// height: 120rpx;
+		padding: 21rpx 24rpx;
+
+		text {
+			display: inline-block;
+			background: linear-gradient(0deg, #5BC7A6, #11D48D, #5BC7A6);
+			width: 702rpx;
+			height: 78rpx;
+			line-height: 78rpx;
+			color: #FFFFFF;
+			font-size: 34rpx;
+			border-radius: 10rpx;
+		}
+	}
+</style>

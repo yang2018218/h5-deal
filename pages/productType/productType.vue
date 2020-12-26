@@ -1,0 +1,228 @@
+<template>
+	<view class="product_body ">
+		<view class="search">
+			<span class="iconfont icon-xiangzuo zuo" @click="returnPage"></span>
+			<view class="search_box">
+				<text class="iconfont icon-sousuo "></text>
+				<input type="text" @confirm="search" v-model="searchVal" placeholder-class="search-placeholder" placeholder="请输入搜索内容" />
+			</view>
+		</view>
+		<view class="conten">
+			<view class="conten_left bluk_style">
+				<view v-for="(item,index) in oneKindList" :key="index" class="text" @click="clickOneKind(item,index)" :class="{activeId:cumId == index}">
+					{{item.dictLabel}}
+				</view>
+			</view>
+			<view class="conten_right bluk_style">
+				<view v-for="(item,index) in list" :key="index" style="">
+					<view class="conten_right_title">{{item.dictLabel}}</view>
+					<view class="flex_style">
+						<view v-for="(it,ind) in item.list" :key="ind" class="conten_right_little shenglue" @click="getKind(item,it)">
+							<text>{{it.dictLabel}}</text>
+						</view>
+					</view>
+
+				</view>
+			</view>
+		</view>
+
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				typeInfo: '',//判断是否是供应或者求购
+				checkedOne: [],
+				searchVal: '', //搜索内容
+				oneKindList: [], //一级的种类
+				cumId: 0,
+				list: [{
+						name: '小学',
+						list: [{
+							name: '一年级'
+						}, {
+							name: '二年级'
+						}, {
+							name: '三年级'
+						}, {
+							name: '三年级'
+						}, {
+							name: '三年级'
+						}, ],
+					},
+					{
+						name: '初中',
+						list: [{
+								name: '一年级'
+							},
+							{
+								name: '二年级'
+							},
+							{
+								name: '三年级'
+							},
+
+						],
+					}
+				]
+			}
+		},
+		onLoad(opt) {
+			this.typeInfo = opt.type
+		},
+		onReady() {
+			this.oneKindList = this.$store.state.oneKindList
+			console.log(this.oneKindList[0], 'this.oneKindList')
+			this.getthreeKind(this.oneKindList[0].dictCode)
+			this.checkedOne.push(this.oneKindList[0])
+		},
+		methods: {
+			// 获取第三级数据
+			getthreeKind(id) {
+				this.$http.get('deal/dictData/getDictSecondThreeList', {
+					params: {
+						parentId: id
+					}
+				}).then(data => {
+					if (data && data.code==0) {
+						console.log(data, '动物种类....')
+						this.list = data.result
+					}
+				}).catch(err => {
+
+				})
+			},
+			returnPage() {
+				console.log('返回')
+				uni.navigateTo({
+					url: "/pages/chaigou/chaigou"
+				})
+			},
+			clickOneKind(item, index) {
+				this.cumId = index
+				this.checkedOne[0] = item
+			},
+			getKind(item, it) {
+				this.checkedOne.push(item)
+				this.checkedOne.push(it)
+				if (this.typeInfo == '2') {
+					uni.setStorageSync("caigoukind", this.checkedOne)
+					uni.navigateTo({
+						url: "/pages/fourKind/fourKind?type=2&id=" + item.dictCode
+					})
+				} else if (this.typeInfo == '1') {
+					uni.setStorageSync("gongyingkind", this.checkedOne)
+					uni.navigateTo({
+						url: "/pages/fourKind/fourKind?type=1&id=" + item.dictCode
+					})
+				}
+
+			}
+
+		}
+	}
+</script>
+
+<style lang="scss">
+	.product_body {
+		background-color: #FFF;
+		padding-top: 18rpx;
+		padding-right: 24rpx;
+
+		.search {
+			display: flex;
+			margin-left: 27rpx;
+
+			span {
+				line-height: 68rpx;
+				font-size: 42rpx;
+				color: #666;
+			}
+
+			.search_box {
+				display: flex;
+				align-items: center;
+				background-color: #EFEFEF;
+				height: 68rpx;
+				width: 614rpx;
+				border-radius: 8rpx;
+				margin-left: 45rpx;
+
+				text {
+					color: #888;
+					margin: 0 11rpx 0 20rpx;
+				}
+
+				input {
+					height: 68rpx;
+					line-height: 68rpx;
+					font-size: 26rpx;
+					font-weight: 400;
+					color: #999999;
+				}
+			}
+		}
+
+		.conten {
+			margin-top: 40rpx;
+			display: flex;
+
+			.conten_left {
+				width: 181rpx;
+				height: 100vh;
+
+				background: #f5f5f5;
+				display: inline-block;
+				font-size: 30rpx;
+				font-weight: 500;
+				color: #333333;
+
+				.text {
+					padding: 35rpx 22rpx;
+				}
+			}
+
+			.conten_right {
+				padding-left: 34rpx;
+				display: inline-block;
+				background-color: #fff;
+				height: 100vh;
+				width: 540rpx;
+
+				.conten_right_title {
+					font-size: 28rpx;
+					font-weight: 500;
+					color: #333333;
+					margin: 40rpx 0 40rpx 0rpx;
+				}
+
+				.conten_right_little {
+					display: inline-block;
+					background: #F5F5F5;
+					border-radius: 10rpx;
+					width: 155rpx;
+					max-width: 150rpx;
+					text-align: center;
+					padding: 25rpx 0rpx;
+					margin-bottom: 25rpx;
+					font-size: 24rpx;
+					font-weight: bold;
+					color: #666666;
+				}
+
+				.flex_style {
+					display: flex;
+					flex-wrap: wrap;
+					justify-content: space-between;
+				}
+			}
+		}
+	}
+
+	.activeId {
+		background-color: #fff;
+		color: #5BC7A6;
+	}
+</style>

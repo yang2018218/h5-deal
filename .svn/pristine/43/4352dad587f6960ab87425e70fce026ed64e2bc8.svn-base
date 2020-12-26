@@ -1,0 +1,31 @@
+/* 
+ 全局css样式 
+ */
+.text_center {
+	text-align: center;
+}
+
+.bulk_style {
+	display: inline-block;
+}
+
+.font_size {
+	font-size: 28rpx;
+}
+
+.background_padding {
+	padding:0 24rpx;
+}
+
+.background_color {
+	background-color: #f5f5f5;
+}
+
+.shenglue {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.uni-picker-container .uni-picker-action.uni-picker-action-confirm{
+		color: #11D48D !important;
+	}

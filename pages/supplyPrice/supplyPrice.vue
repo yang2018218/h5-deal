@@ -1,0 +1,286 @@
+<template>
+	<!-- 供应价格页 -->
+	<view class="background_color price" style="height: 100%;">
+		<view class="centent background_padding">
+			<view class="top ">
+				<view class="con_list">
+					<text>计量单位</text>
+					<view class="unit" :class="{activeColor:this.measuringUnit!=''}">
+						{{unitText}}
+					</view>
+					<picker @change="bindPickerChange" range-key="dictLabel"  :value="index" :range="array">
+						<span class="iconfont icon-arrow-down-bold down"></span>
+					</picker>
+				</view>
+				<view class="con_list yijia">
+					<text>可议价</text>
+					<switch class="" :checked='checkedVal' style="transform:scale(0.9,0.83)" color="#5BC7A6" @change="switch2Change" />
+				</view>
+				<view class="table">
+					<text class="left">规格</text>
+					<text class="cen">起批量</text>
+					<text class="right">价格</text>
+				</view>
+				<view class="table list" v-for="(item,index) in specificationsList" :key="index">
+					<input class="left" v-model="item.specificationsName" placeholder="例：一个月的小猪仔" />
+					<input class="cen" v-model="item.theBatch" placeholder="200" />
+					<input class="right" v-model="item.price" placeholder="200" />
+					<text>元/{{unitText!="请选择计量单位"?unitText:'斤'}}</text>
+					<span class="iconfont icon-jian jian" @click="remove(index)"></span>
+				</view>
+				<view class="addCla">
+					<span>增加</span>
+					<text @click="addItem()" class="iconfont icon-zengjia"></text>
+				</view>
+			</view>
+		</view>
+		<view class="bottom_bom">
+			<text @click="nextstep()">下一步</text>
+		</view>
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				specificationsList: [{
+					specificationsName: '',
+					theBatch: '',
+					price: '',
+				}, ], //
+				bargainingPower: 0, //是否可议价0是1否
+				measuringUnit: '', //计量单位
+				array: [],
+				index: 0,
+				unitText: '请选择计量单位', //计量单位
+				dictCode: '',
+				checkedVal: '',
+
+			};
+		},
+		onLoad(opt) {
+			console.log(opt.dictCode)
+			// this.dictCode = opt.dictCode
+			this.getUnit(opt)
+		},
+		methods: {
+			// 下一步
+			nextstep() {
+				var data = {}
+				data.bargainingPower = this.bargainingPower
+				data.measuringUnit = this.measuringUnit
+				data.specificationsList = this.specificationsList
+				data.unitText = this.unitText
+				uni.setStorageSync("price",data)
+				let pages = getCurrentPages(); // 当前页面
+				let beforePage = pages[pages.length - 2]; // 前一个页面
+				console.log("beforePage", beforePage);
+				console.log(pages);
+				uni.navigateBack({
+					delta: 1,
+					success: function() {
+						beforePage.$vm.refreshPrice(); // 执行前一个页面的刷新
+					}
+				});
+			},
+			// 添加
+			addItem() {
+				this.specificationsList.push({
+					specificationsName: '',
+					theBatch: '',
+					price: '',
+				})
+			},
+			// 移除
+			remove(index) {
+				this.specificationsList.splice(index, 1)
+			},
+			// 获取是否可议价
+			switch2Change(e) {
+				console.log(e.detail.value, 'eee')
+				if (e.detail.value) {
+					this.bargainingPower = "0"
+				} else {
+					this.bargainingPower = "1"
+				}
+			},
+			// 获取计量单位
+			getUnit(opt) {
+				this.$http.get('deal/dictData/getUnitList', {
+					params: {
+						parentId: opt.dictCode,
+						dictType: 'measuringUnit'
+					}
+				}).then(data => {
+					if (data && data.code==0) {
+						this.array = data.result
+					}
+				}).catch(err => {})
+			},
+			bindPickerChange: function(e) {
+				this.index = e.target.value
+				this.unitText = this.array[e.target.value].dictLabel
+				this.measuringUnit = this.array[e.target.value].dictCode
+			},
+			bindDateChange: function(e) {
+				this.date = e.target.value
+			},
+			bindTimeChange: function(e) {
+				this.time = e.target.value
+			},
+		}
+	}
+</script>
+
+<style lang="scss">
+	page {
+		height: 100%;
+	}
+
+	.price {
+		padding-top: 47rpx;
+		position: relative;
+
+		.centent {
+
+			.top {
+				background-color: #FFFFFF;
+				// height: 300rpx;
+				border-radius: 10rpx;
+
+				.con_list {
+					display: flex;
+					line-height: 106rpx;
+					font-size: 30rpx;
+					font-weight: bold;
+					color: #333333;
+					height: 106rpx;
+					padding: 0rpx 20rpx;
+					border-bottom: 1rpx solid #F2F2F2;
+
+					.unit {
+						margin-left: 40rpx;
+						display: inline-block;
+						width: 450rpx;
+						font-size: 30rpx;
+						font-weight: 500;
+						color: #CCCCCC;
+					}
+
+					.down {
+						color: #666;
+						font-size: 32rpx;
+					}
+				}
+
+				.yijia {
+					justify-content: space-between;
+				}
+
+				.table {
+					padding: 40rpx 0 15rpx 10rpx;
+
+					text {
+						margin-left: 10rpx;
+						display: inline-block;
+						font-size: 30rpx;
+
+						font-weight: bold;
+						color: #333333;
+					}
+
+					.left {
+						width: 272rpx;
+					}
+
+					.cen {
+						width: 112rpx;
+						text-align: center;
+					}
+
+					.right {
+						width: 112rpx;
+						text-align: center;
+					}
+				}
+
+				.list {
+					display: flex;
+
+					input {
+						display: inline-block;
+						background-color: #F2F2F2;
+						height: 80rpx;
+						margin-left: 14rpx;
+						border-radius: 10rpx;
+						font-size: 26rpx;
+						font-weight: 500;
+						color: #999999;
+						text-indent: 15rpx;
+					}
+
+					text {
+						line-height: 80rpx;
+						font-size: 28rpx;
+						font-family: PingFang SC;
+						font-weight: bold;
+						color: #333333;
+					}
+
+					.jian {
+						line-height: 80rpx;
+						color: #11D48D;
+						margin-left: 12rpx;
+					}
+				}
+
+				.addCla {
+					text-align: right;
+					padding-bottom: 50rpx;
+					padding-top: 30rpx;
+					padding-right: 28rpx;
+					font-size: 30rpx;
+					font-weight: 500;
+					color: #11D48D;
+
+					span {
+						margin-right: 34rpx;
+					}
+
+					text {
+						font-size: 34rpx;
+					}
+
+				}
+			}
+		}
+
+		.bottom_bom {
+			position: fixed;
+			bottom: 0;
+			height: 120rpx;
+			width: 100%;
+			background-color: #FFFFFF;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+
+			text {
+				display: inline-block;
+				width: 702rpx;
+				height: 80rpx;
+				text-align: center;
+				line-height: 80rpx;
+				color: #FFFFFF;
+				font-size: 34rpx;
+				border-radius: 10rpx;
+				background: linear-gradient(0deg, #5BC7A6, #11D48D, #5BC7A6);
+			}
+		}
+	}
+
+	.activeColor {
+		color: #666 !important;
+	}
+</style>

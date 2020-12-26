@@ -1,0 +1,616 @@
+<template>
+	<view class="background_color  caigou" style="height: 100%;">
+		<view class="content background_padding">
+			<view class="form_box ">
+				<form @submit="indexSubmit">
+					<view class="uni-form-item uni-column">
+						<view class="content_list">
+							<view>
+								<text class="iconfont icon-xinghao color_"></text>
+								<text class="form_title">
+									采购产品
+								</text>
+								<view class="bluk_style  shouhuoStyle shenglue">{{textKind}}</view>
+							</view>
+							<view @click="moreProduct()">
+								<span></span>
+							</view>
+						</view>
+						<view class="content_list">
+							<view>
+								<text class="iconfont icon-xinghao color_"></text>
+								<text class="form_title">
+									采购数量
+								</text>
+								<input type="text" name="number" v-model="number" placeholder="请选择采购数量">
+							</view>
+							<view style="display: flex;align-items: center;">
+								<text class="unitStyle">{{unitName}}</text><span @click="popup('1')"></span>
+							</view>
+						</view>
+						<view class="content_list">
+							<view>
+								<text class="iconfont icon-xinghao color_"></text>
+								<text class="form_title">
+									采购区域
+								</text>
+								<input type="text" name="purchase" v-model="purchase.name" placeholder="请选择采购地址">
+							</view>
+							<view>
+								<span @click="areaPath()"></span>
+							</view>
+						</view>
+						<view class="content_list">
+							<view>
+								<text class="iconfont icon-xinghao color_"></text>
+								<text class="form_title">
+									采购频率
+								</text>
+								<input type="text" name="selectFrequency" v-model="selectFrequency" placeholder="请选择采购">
+							</view>
+							<view>
+								<span @click="popup('2')"></span>
+							</view>
+						</view>
+						<view class="content_list">
+							<view>
+								<text class="iconfont icon-xinghao color_"></text>
+								<text class="form_title">
+									收货地址
+								</text>
+								<view class="bluk_style  shouhuoStyle shenglue">{{shouhuoTxt}}</view>
+							</view>
+							<view>
+								<span @click="sitePath()"></span>
+							</view>
+						</view>
+						<view class="ask">
+							<text class="form_title">
+								采购要求
+							</text>
+							<textarea @blur="bindTextAreaBlur" placeholder="请输入采购要求" v-model="supplyNote" auto-height />
+							</view>
+						<view class="img_box">
+							<view style="display: flex;">
+								<text class="iconfont icon-xinghao color_"></text>
+								<text class="form_title">
+								照片视频
+								</text>
+							</view>
+								<view class="imglist_box">
+									<img-upload @imgList='getImg'></img-upload>
+							</view>
+						</view>
+						<view class="content_list">
+							<view>
+								<text class="iconfont icon-xinghao color_"></text>
+								<text class="form_title">
+									截止日期
+								</text>
+								<view class="bluk_style  shouhuoStyle shenglue">{{dateInfo}}</view>
+							</view>
+							<view>
+								<span @click="popDate()"></span>
+							</view>
+						</view>
+					</view>
+				</form>
+			</view>
+		</view>
+		<view class="bottm_btn"@click="issueFun()">
+			<bottom-button ></bottom-button>
+		</view>
+		<!-- 弹窗日历 -->
+		<wyb-popup-pop ref="popup_pop" type="bottom" height="400" width="500" radius="6">
+			<view class="dateCentent">
+				<riLi  :insert="true"
+                       :lunar="false" 
+                       :start-date="'1880-3-2'"
+                       :end-date="'2999-12-30'"
+                       @change="change">
+					   </riLi>
+			</view>
+		</wyb-popup-pop>
+		<!-- 弹窗频率和地址 -->
+		<wyb-popup ref="popup" type="bottom" height="400" width="500" radius="6">
+			<view class="popup-content">
+				<view class="top_title">
+					<text class="left" @click="abandonPopup()">取消</text>
+					<text class="clear"></text>
+					<text class="content">{{textTop}}</text>
+					<text class="right" @click="confirmPopup()">确定</text>
+					<text class="clear"></text>
+				</view>
+				<view>
+					<scroll-view scroll-y="true" style="height: 500rpx;">
+						<view v-for="(item,index) in popPageList" :key="index" class="selectText text_center" @click="clickSelectText(item,index)"
+						 :class="{active:cumId==index}">
+							<text>{{item.dictLabel}}</text>
+						</view>
+					</scroll-view>
+				</view>
+			</view>
+		</wyb-popup>
+	</view>
+</template>
+
+<script>
+	import bottomButton from '../../components/bottom-button.vue'
+	// 日历组件
+	import riLi from "../../components/uni-calendar/uni-calendar.vue"
+	// 上传图片
+	import imgUpload from '../../components/imgUpload'
+	import wybPopup from '../../components/wyb-popup/wyb-popup.vue'
+	import wybPopupPop from "../../components/wyb-popup/wyb-popup.vue"
+	// 引入使用的效验
+import WxValidate from '../../util/WxValidate.js'
+	export default {
+		data() {
+			return {
+    
+	            supplyNote:'',//采购描述
+	            lat:"39.901403",//维度
+			    lng:'116.406243',//经度
+ 			    supplyProvince:"410000",
+				supplyCity:"410100",
+				supplyCounty:"410101",
+	            number: '', //采购数量
+				offTime:'',//截止时间
+				dateInfo:'请选择截止日期',//选中日期
+				textKind:"",//选中的汉字
+				selectOneKind:[],//选中的产品
+				selectFrequency: '', //选中的采购频率
+				frequencyItem: '', //选中的数据
+				itemList: '', //选中的项
+				FrequencyList: [], //频率
+				purchase: {}, //采购数量
+			    userAddressId:'',//地址id
+				textTop: '', //弹出层文字
+				name: '', //采购名字
+				popPageList: [], //弹出层数据
+				unitList: [], //计量单位
+				cumId: 1, //选中变色
+				unitName: '', //展示的文字
+				selectUnit: '', //选中的单位
+				shouhuosite: '', //收货地址
+				shouhuoTxt: '请选择收货地址',
+                imageList:[],//上传图片地址
+				
+			};
+		},
+		onReady() {
+			this.getUnitList()
+			this.getFrequencyList()
+			// uni.setStorageSync("caigoukind",'')
+			this.selectOneKind = uni.getStorageSync("caigoukind")
+
+			if(this.selectOneKind.length>0){
+				this.selectOneKind.forEach(e=>{
+					if(this.textKind==''){
+						 this.textKind = e.dictLabel
+					}else{
+	                 this.textKind = this.textKind+'/'+ e.dictLabel
+					}
+				})
+			}
+		
+		},
+		components: {
+			wybPopup,
+			imgUpload,
+			riLi,
+			wybPopupPop,
+			bottomButton
+		},
+		methods: {
+			// 发布
+			issueFun(){
+				uni.showLoading({
+				    title: '发布中...'
+				});
+		
+		if(this.selectOneKind.length!='4'){
+			uni.showToast({
+						title: "请检查是否填写采购产品",
+						icon: 'none'
+					});
+		return
+		}
+		if(this.number<=0){
+			uni.showToast({
+						title: "请检查请输入有效数量",
+						icon: 'none'
+					});
+		}
+	// this.datalist.measuringUnit = this.selectUnit.dictCode
+	           if(!this.offTime){
+			        uni.showToast({
+						title: "请检查采购时间是否存在",
+						icon: 'none'
+					});
+					return
+	            }
+	            if(!this.userAddressId){
+		             uni.showToast({
+					     title: "请检查是否填写",
+					     icon: 'none'
+				});
+				 return
+	            }
+	            if(this.imageList.length==0){
+			         uni.showToast({
+						title: "请检查是否上传图片",
+						icon: 'none'
+					});
+					return
+	            }
+	        if(!this.frequencyItem.dictCode){
+		        uni.showToast({
+					title: "请检查是否选择采购频率",
+					icon: 'none'
+				});
+				return
+	        }
+				this.$http.post('deal/purchaseInfo/addPurchaseInfo', {
+					classificationOne:this.selectOneKind[0].dictCode,
+					classificationTwo:this.selectOneKind[1].dictCode,
+					classificationThree:this.selectOneKind[2].dictCode,
+					classificationFour:this.selectOneKind[3].dictCode,
+					number:this.number,
+					measuringUnit:this.selectUnit.dictCode,
+					imageList:this.imageList,
+					supplyFrequency:this.frequencyItem.dictCode,
+					userAddressId:this.userAddressId,
+					// lat:this.lat,
+					// lng :this.lng,
+					supplyProvince:this.supplyProvince,
+					supplyCity:this.supplyCity,
+					supplyCounty:this.supplyCounty,
+					offTime:this.offTime+ " " +'23:59:59',
+					supplyNote:this.supplyNote
+					
+				}).then(data => {
+					if (data && data.code == 200) {
+						uni.setStorageSync('caigoukind','')
+						 uni.hideLoading();
+						 uni.showToast({
+						 			title: "发布成功",
+						 			icon: 'none'
+						 		});
+						// data.result.forEach((e) => {
+						// 	e.dictType = "pinlv"
+						// })
+					}
+				}).catch(err => {})
+			},
+			 change(e) {
+				 console.log(e.fulldate)
+						this.$refs.popup_pop.hide()
+						this.dateInfo = e.fulldate
+					    this.offTime = e.fulldate
+					if(e.fulldate =="2999-12-22"){
+						this.dateInfo = "日期不限"
+					}
+			},
+			// 日历弹窗
+			popDate(){
+				this.$refs.popup_pop.show()
+			},
+			
+			// 获取上传图片
+			getImg(e){
+				this.imageList.push({pictureUrl:e})
+			},
+			// 采购刷新
+			caigoureshRequest() {
+				this.shouhuosite = uni.getStorageSync("purchase")
+				// console.log(this.shouhuosite)
+				// offTime:this.offTime
+				this.userAddressId = this.shouhuosite.id
+				this.shouhuoTxt = `${this.shouhuosite.province}${this.shouhuosite.city}${this.shouhuosite.area}`
+			},
+			// 地址页
+			sitePath() {
+				uni.navigateTo({
+					url: '/pages/sitePage/sitePage?type=2'
+				})
+			},
+			// 采购频率
+			getFrequencyList() {
+				this.$http.get('deal/dictData/getFirstTypeList', {
+					params: {
+						dictType: 'purchaseFrequency',
+					}
+				}).then(data => {
+					if (data && data.code == 200) {
+						data.result.forEach((e) => {
+							e.dictType = "pinlv"
+						})
+						this.FrequencyList = data.result
+					}
+				}).catch(err => {})
+
+			},
+			// 跳转地址管理
+			areaPath() {
+
+			},
+			// 确定popup了框
+			confirmPopup() {
+				this.$refs.popup.hide()
+				if (this.itemList.dictType == 'measuringUnit') {
+					this.selectUnit = this.itemList //选中的数组
+					this.unitName = this.itemList.dictLabel //选中的名字
+				} else if (this.itemList.dictType == 'pinlv') {
+					this.frequencyItem = this.itemList
+					this.selectFrequency = this.itemList.dictLabel
+				}
+			},
+			// 取消popup
+			abandonPopup() {
+				this.$refs.popup.hide()
+			},
+			// 点击选中的文字
+			clickSelectText(item, index) {
+				this.cumId = index
+				this.itemList = item
+			},
+			// 采购频率
+			getFrequency() {
+
+			},
+			//采购单位弹出
+			popup(s) {
+				this.cumId = 0
+				this.$refs.popup.show()
+				if (s == 1) {
+					this.popPageList = this.unitList
+					this.textTop = "计量单位"
+				} else if (s == 2) {
+					this.textTop = "采购频率"
+					this.popPageList = this.FrequencyList
+				}
+
+			},
+			getUnitList() {
+				this.getFrequency()
+				this.$http.get('deal/dictData/getUnitList', {
+					params: {
+						parentId: "4633a570481e4519858f9dc501bfd85b",
+						dictType: 'measuringUnit'
+					}
+				}).then(data => {
+					if (data && data.code == 200) {
+						this.unitList = data.result
+						this.unitName = data.result[0].dictLabel
+						this.selectUnit = data.result[0] //选中的数组
+					}
+				}).catch(err => {
+				})
+			},
+			// 返回首页
+			returnPage() {
+				uni.switchTab({
+					url: "/pages/Home/Home"
+				})
+			},
+			// 更多产品
+			moreProduct() {
+				uni.navigateTo({
+					url: "/pages/productType/productType?type="+'2'
+				})
+			},
+			formSubmit(e) {
+				var formdata = e.detail.value
+				uni.showModal({
+					content: '表单数据内容：' + JSON.stringify(formdata),
+					showCancel: false
+				});
+			},
+
+		}
+	}
+</script>
+
+<style lang="scss">
+	page{
+		width: 100%;
+	}
+	.top {
+		display: flex;
+
+		.top_left {
+			flex: 1;
+			font-size: 42rpx;
+			color: #666;
+		}
+
+		.top_right {
+			flex: auto;
+		}
+	}
+
+	.popup-content {
+		height: 601rpx;
+		padding: 0rpx 25rpx;
+
+		.top_title {
+			height: 100rpx;
+			line-height: 100rpx;
+			text-align: center;
+			font-size: 30rpx;
+			font-weight: 500;
+			color: #999999;
+			border-bottom: 1rpx solid #F5F5F5;
+
+			.left {
+				float: left;
+			}
+
+			.content {
+				color: #333333;
+				font-size: 34rpx;
+			}
+
+			.right {
+				float: right;
+				color: #5BC7A6;
+			}
+
+			.clear {
+				clear: both;
+			}
+
+		}
+
+		.selectText {
+
+			font-size: 36rpx;
+			font-weight: 500;
+			color: #CCCCCC;
+
+			text {
+				display: inline-block;
+				padding: 35rpx 0;
+			}
+		}
+	}
+
+	.caigou {
+		position: relative;
+		// padding-top: 35rpx;
+
+
+
+		.content {
+			background-color: #f5f5f5;
+			// margin-top: 47rpx;
+
+			.form_box {
+				background-color: #FFFFFF;
+				.content_list {
+					margin-left: 19rpx;
+					border-bottom: 1rpx solid #F2F2F2;
+					padding: 39rpx 13rpx 39rpx 0;
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+
+					view {
+						justify-content: space-between;
+						display: flex;
+						align-items: center;
+					}
+
+					.color_ {
+						color: #E53E27;
+						font-size: 13rpx;
+					}
+
+					.form_title {
+						margin: 0 6rpx;
+						font-size: 32rpx;
+						font-weight: 500;
+						color: #333333;
+						width: 142rpx;
+					}
+
+					span {
+						display: inline-block;
+						width: 28rpx;
+						height: 28rpx;
+						margin-right: 13rpx;
+						background-size: 28rpx, 28rpx;
+						background-image: url(../../static/img/jiaoyiImg/更多@2x.png);
+					}
+
+					input {
+						font-size: 30rpx;
+						font-weight: 500;
+						color: #666666;
+					}
+					.imglist_box{
+						display: flex;
+						
+					}
+				}
+              
+				.ask {
+					display: flex;
+					padding: 40rpx 20rpx 40rpx 50rpx;
+					border-bottom: 1rpx solid #f2f2f2;
+
+					.form_title {
+						display: inline-block;
+						width: 170rpx;
+						margin: 0 6rpx;
+						font-size: 32rpx;
+						font-weight: 500;
+						color: #333333;
+					}
+					input{
+						display: inline-block;
+						width: 478rpx;
+						height: 135rpx;
+						margin-left: 41rpx;
+					}
+				}
+
+				.shouhuoStyle {
+					font-size: 30rpx;
+					font-weight: 500;
+					color: #666666;
+					// margin-left: 41rpx;
+					// min-width: 447rpx;
+					
+				}
+			}
+		}
+
+		.unitStyle {
+			font-size: 30rpx;
+			color: #666666;
+		}
+	}
+
+	.active {
+		border-radius: 10rpx;
+		background-color: #F5F5F5;
+		color: #555555;
+
+		text {
+			color: #555555;
+		}
+	}
+	
+	
+	.img_box{
+		margin-left: 19rpx;
+		border-bottom: 1rpx solid #F2F2F2;
+		padding: 39rpx 13rpx 39rpx 0;
+		display: flex;
+		// align-items: center;
+		justify-content: space-between;
+		.form_title {
+			display: inline-block;
+			margin: 0 6rpx;
+			font-size: 32rpx;
+			font-weight: 500;
+			color: #333333;
+			width: 142rpx;
+		}
+		
+		.color_ {
+			color: #E53E27;
+			font-size: 13rpx;
+		}
+		.imglist_box{
+			display: inline-block;
+			width: 500rpx;
+           
+		}
+	}
+	.bottm_btn{
+		position: fixed;
+	}
+</style>

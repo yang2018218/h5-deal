@@ -1,0 +1,349 @@
+<template>
+	<view class="filter-wrapper" :style="{ height: height + 'rpx', top: '84rpx','border-top':border?'1rpx solid #f2f2f2':'none' }"
+	 @touchmove.stop.prevent="discard">
+		<view class="inner-wrapper">
+			<view class="mask" :class="showMask ? 'show' : 'hide'" @tap="tapMask"></view>
+			<view class="navs">
+				<view class="c-flex-align" :class="{ 'c-flex-center': index > 0, actNav: index === actNav }" v-for="(item, index) in navData"
+				 :key="index" @click="navClick(index)">
+					<view v-for="(child, childx) in item" :key="childx" v-if="child.select">{{child.name }}</view>
+					<text class="iconfont icon-arrow-up-bold icon-triangle" v-if="index === actNav"></text>
+					<text class="iconfont  icon-arrow-down-bold icon-triangle" v-else></text>
+				</view>
+			</view>
+			<scroll-view scroll-y="true" class="popup" :class="popupShow ? 'popupShow' : ''">
+				<view class="checkedBox">
+					<text v-if="checkedAreaData.length =='0' " style="margin-bottom: 40rpx;" class="bulk_style">
+						请选择
+					</text>
+					<text class="bulk_style" v-if="checkedAreaData.length !='0'" v-for="(item,index) in checkedAreaData" :key="index">
+						{{item.name}}
+					</text>
+				</view>
+				<view class="pop_box">
+					<view class="item-opt c-flex-align" :class="item.select ? 'actOpt' : ''" v-for="(item, index) in navData[actNav]"
+					 :key="index" @click="handleOpt(index,navData[actNav],actNav)">
+						{{item.name}}
+					</view>
+					{{navData}}
+					<br>
+					<br>
+					{{actNav}}
+					<br>
+					<br>
+					{{navData[actNav]}}
+				</view>
+			</scroll-view>
+		</view>
+	</view>
+</template>
+
+<script>
+	// import { getCurDateTime } from '@/libs/utils.js';
+	export default {
+		data() {
+			return {
+				checkedAreaData: [], //选中的区域
+			}
+		},
+		props: {
+
+			height: {
+				type: Number,
+				default: 108
+			},
+			top: {
+				type: String,
+				default: 'calc(var(--window-statsu-bar) + 44px)'
+			},
+			border: {
+				type: Boolean,
+				default: false
+			},
+			filterData: {
+				//必填
+				type: Array,
+			},
+			checkedAreaData: {
+				type: Array
+			}, //选中的区域
+			defaultIndex: {
+				//默认选中条件索引,超出一类时必填
+				type: Array,
+				default: () => {
+					return [0];
+				}
+			},
+			province: {
+				type: Array
+			}
+		},
+		data() {
+			return {
+				navData: [],
+				popupShow: false,
+				showMask: false,
+				actNav: null,
+				selIndex: [] //选中条件索引
+			};
+		},
+		created() {
+			this.navData = this.filterData;
+			console.log(this.filterData, 333)
+			this.selIndex = this.defaultIndex;
+			this.checkedAreaData = this.checkedAreaData
+			this.keepStatus();
+		},
+		mounted() {
+			// this.selDate = getCurDateTime().formatDate;
+		},
+		onReady() {
+
+		},
+		methods: {
+			keepStatus() {
+				console.log(this.province, '555')
+				this.navData.forEach(itemnavData => {
+					// console.log(itemnavData,'itemnavData')
+					itemnavData.map(child => {
+						child.select = false;
+					});
+					return itemnavData;
+				});
+				for (let i = 0; i < this.selIndex.length; i++) {
+					let selindex = this.selIndex[i];
+					this.navData[i][selindex].select = true;
+				}
+			},
+			navClick(index) {
+				if (index === this.actNav) {
+					this.tapMask();
+					return;
+				}
+				// if (index = 1) {
+				// 	console.log("区域...")
+				// 	this.navData[index] = this.province
+				// 	console.log(this.navData[index], '6666')
+				// }
+				this.popupShow = true;
+				this.showMask = true;
+				this.actNav = index;
+			},
+			// 置false
+			keepArea() {
+				console.log(this.navData[1], 3)
+				this.navData[1].forEach(e => {
+					e.select = false
+					// e.forEach(i) {
+					// 	i.select = false
+					// }
+				})
+			},
+			handleOpt(index, it, sta) {
+				var this_ = this
+				console.log(sta)
+				if (sta == '0' || sta == '3') {
+					console.log('供应或者身份...')
+					this.selIndex[this.actNav] = index;
+					this.keepStatus();
+					setTimeout(() => {
+						this.tapMask();
+					}, 100);
+					let data = [];
+					let res = this.navData.forEach(item => {
+						let sel = item.filter(child => child.select);
+						data.push(sel);
+					});
+					console.log(data);
+					this.$emit('onSelected', data);
+				} else {
+					this.popupShow = false
+					console.log(it[index], '区域...品类...')
+					this.keepArea()
+					it[index].select = true
+					this.checkedAreaData.push(it[index])
+					this.$http.get('deal/provinceCity/getProvinceCity', {
+						params: {
+							pid: it[index].id
+						}
+					}).then(data => {
+						if (data.code==0) {
+							this_.navData[sta] = data.result
+							data.result.forEach((e, index) => {
+								e.select = false
+								if (index == 0) {
+									e.select = true
+								}
+							})
+							console.log(this_.navData, 'this_.navData...')
+							this.popupShow = true
+							if (this_.checkedAreaData.length == '3') {
+								this_.popupShow = false
+								this_.navData[1] = this_.checkedAreaData[2]
+							}
+						} else {
+
+						}
+					}).catch(err => {})
+					// console.log(this.$store.state.provinceList,'store...')
+				}
+
+			},
+			dateClick() {
+				this.tapMask();
+			},
+			tapMask() {
+				this.showMask = false;
+				this.popupShow = false;
+				this.actNav = null;
+			},
+			handleDate(e) {
+				let d = e.detail.value;
+				this.selDate = d;
+				this.$emit('dateChange', d);
+			},
+			discard() {}
+		}
+	};
+</script>
+
+<style lang="scss" scoped>
+	page {
+		font-size: 28rpx;
+	}
+
+	.c-flex-align {
+		display: flex;
+		align-items: center;
+		font-size: 28rpx;
+		font-weight: 500;
+		height: 28rpx;
+	}
+
+	.c-flex-center {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+	}
+
+	.filter-wrapper {
+		position: fixed;
+		left: 0;
+	
+		width: 750rpx;
+		z-index: 999;
+
+		.inner-wrapper {
+
+			// position: relative;
+			.navs {
+				position: relative;
+				height: 110rpx;
+				padding: 0 40rpx;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				background-color: #f5f5f5;
+				border-bottom: 2rpx solid #f5f6f9;
+				color: #333;
+				z-index: 999;
+				box-sizing: border-box;
+
+				&>view {
+					flex: 1;
+					height: 100%;
+					flex-direction: row;
+					z-index: 999;
+				}
+
+				.date {
+					justify-content: flex-end;
+				}
+
+				.actNav {
+					font-weight: 500;
+					color: #5BC7A6;
+				}
+			}
+
+			.mask {
+				z-index: 666;
+				position: fixed;
+				top: calc(var(--status-bar-height) + 44px);
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background-color: rgba(0, 0, 0, 0);
+				transition: background-color 0.15s linear;
+
+				&.show {
+					background-color: rgba(0, 0, 0, 0.4);
+				}
+
+				&.hide {
+					display: none;
+				}
+			}
+
+			.popup {
+				position: relative;
+				max-height: 500rpx;
+				background-color: #fff;
+				border-bottom-left-radius: 20rpx;
+				border-bottom-right-radius: 20rpx;
+				overflow: scroll;
+				z-index: 999;
+				transition: all 1s linear;
+				opacity: 0;
+				display: none;
+
+				.item-opt {
+					height: 100rpx;
+					padding: 0 40rpx;
+					color: #333;
+					// border-bottom: 2rpx solid #f5f6f9;
+				}
+
+				.actOpt {
+					color: #5BC7A6;
+					font-weight: 500;
+					position: relative;
+
+				}
+			}
+
+			.popupShow {
+				display: block;
+				opacity: 1;
+			}
+		}
+
+		.icon-triangle {
+			width: 16rpx;
+			height: 16rpx;
+			margin-left: 10rpx;
+			font-size: 28rpx;
+		}
+	}
+
+	.checkedBox {
+		margin-top: 16rpx;
+		color: #333;
+
+		text {
+			margin-left: 40rpx;
+			margin-bottom: 62rpx;
+
+		}
+	}
+
+	.pop_box {
+		color: #333;
+
+		// display: flex;
+		view {
+			display: inline-block;
+		}
+	}
+</style>

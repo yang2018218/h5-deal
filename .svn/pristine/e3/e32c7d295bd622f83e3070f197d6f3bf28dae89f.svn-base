@@ -1,0 +1,845 @@
+<template>
+	<view class=" searchPage" :class="{background_color :log_centent!=true }">
+		<!-- <search-com></search-com> -->
+		<view class="top">
+			<uni-nav-bar @clickLeft="returnPage()" left-icon="" fixed='true' background-color="#f5f5f5">
+				<view class="top_box" style="margin-left: 38rpx;">
+					<view class="top_box_left" @click="returnLongPage()">
+						<text class="iconfont icon-sousuo"></text>
+						<input type="text" v-model="title" placeholder-class="search-placeholder" placeholder="请输入搜索内容" />
+					</view>
+					<span v-if="log_centent"><button class="bluk_style" @click="searchFun()">搜索</button></span>
+				</view>
+				<view slot="left" class="iconfont icon-xiangzuo leftReturn"></view>
+				<view slot="right"></view>
+			</uni-nav-bar>
+		</view>
+		<view v-if="log_centent" class="background_padding">
+			<view class="tabClass">
+				<view>
+					<text :class="{checkedsty:this.sta=='1'}" @click="getTabInfo(1)">供应</text>
+					<span :class="{checkedsty:this.sta=='2'}" @click="getTabInfo(2)">采购</span>
+				</view>
+			</view>
+			<view class="hot_search">
+				<view class="hot_search_top">
+					<span>热门搜索</span>
+					<view @click="hotSearch(hotPage + 1)">
+						<img src="" alt="">
+						<text> 换一批</text>
+					</view>
+				</view>
+				<view class="hot_search_list">
+					<view v-for="(item,index) in hotData" class="text_center" @click="hotSearchCount(item.searchContent)" :key="index">
+						{{item.searchContent}}
+					</view>
+				</view>
+			</view>
+			<view class="history_list">
+				<view class="history_list_top">
+					<span>搜索历史</span>
+					<view>
+					</view>
+				</view>
+				<view class="history_list_list" @refresherrefresh="onRefresh" @refresherrestore="onRestore">
+					<view v-for="(item,index) in historyData" :key="index">
+						<text class="bulk_style time">
+						</text>
+						<span class="bulk_style centent_title" @click="hotSearchCount(item.searchContent)">
+							{{item.searchContent}}
+						</span>
+						<text class="bulk_style  cuo" @click="deltem(index)"></text>
+					</view>
+				</view>
+			</view>
+		</view>
+		<view class="list_box background_padding" v-if="list_centent">
+			<view class="list_centent">
+				<wyb-drop-down ref="dropDown" :options="options" @change="onHeaderSelect" @select="onItemSelect">
+					<!-- 自定义模式开启时，这里可以放内容 -->
+					<view v-if="checkedAreaData.length=='0'" class="top_title xuanze background_padding text_center">请选择 </view>
+					<view v-if="checkedAreaData.length!='0'" class="top_title  text_center bluk_style quyu" v-for="(item,index)  in checkedAreaData"
+					 :key="index">
+						<text class="text_title bulk_style">
+							{{item.name}}
+							<text class="iconfont icon-cuo xuanzhong" @click="deleteArea(item,index)"></text>
+						</text>
+					</view>
+					<view class="tab_centent">
+						<view v-for="(item,index) in tabListData" :key="index" class="every_tab bluk_style text_center">
+							<text @click="selectCentent(item,index)" :class="{checked_color :index == checkedColor}">{{item.name}}</text>
+						</view>
+					</view>
+				</wyb-drop-down>
+				<view style="">
+					<view style="height: 104rpx;"></view>
+					<list-com :listData="listData"></list-com>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+<script>
+	// 引入列表
+	import listCom from '../../components/list-com.vue'
+	import searchCom from '../../components/search-com.vue'
+	import uniNavBar from '../../components/navigation/uni-nav-bar/uni-nav-bar.vue'
+	// 引入组件 
+	import wybDropDown from '../../components/wyb-drop-down/wyb-drop-down.vue'
+	export default {
+		data() {
+			return {
+				identity: '', //选中的id
+				idList: [], //身份种类
+				pageSize: 15, //页数
+				page: 1, //页码
+				areaArray: [], //选中的区域
+				kindArray: [], //选中的种类数组
+				fourKind: [], //第四级品类
+				threeKind: [], //三级品类
+				twoKind: [], //二级品类
+				oneKind: [], //一级品类
+				thessCounty: [], //县级
+				twoCity: [], //市级
+				oneProvince: [], //省级
+				checkedColor: '',
+				checkedList: [], //选中的数组
+				gongqiuList: [{
+					name: "供应",
+					label: '1'
+				}, {
+					name: '采购',
+					label: '2'
+				}],
+				tabListData: [], //区域
+				options: [{
+					header: '供求',
+					// contents在自定义开启时可以不用传
+					contents: [{
+						name: '供应',
+						label: '1'
+					}, {
+						name: '采购',
+						label: '2'
+					}],
+					custom: true // 该栏目开启自定义模式
+				}, {
+					header: '区域',
+					contents: ['选项5', '选项6', '选项7', '选项8'],
+					custom: true // 该栏目开启自定义模式
+				}, {
+					header: '品类',
+					contents: ['选项9', '选项10', '选项11', '选项12'],
+					custom: true
+				}, {
+					header: '身份',
+					contents: ['选项9', '选项10', '选项11', '选项12', '选项9', '选项10', '选项11', '选项12'],
+					custom: true
+				}],
+				listData: [], //搜索列表接口
+				opt: '', //传参过来的数据
+				checkedAreaData: [], //选中的区域数组
+				province: [], //
+
+				log_centent: true, //判断是历史记录
+				list_centent: false, //判断是列表
+				sta: 1, //判断是供应还是求购
+				oneselfHistoryPage: 1, //搜索历史页数
+				hotPage: 1, //换一批页数
+				title: '', //搜索结果
+				historyData: [{
+						searchContent: '农村大佬鸭子'
+					},
+					{
+						searchContent: '农村大佬鸭子养殖'
+					},
+				],
+				hotData: [{
+					searchContent: '农村大佬鸭子养殖'
+				}, ]
+			};
+		},
+		components: {
+			// searchCom
+			uniNavBar,
+			listCom
+		},
+		onLoad(option) {},
+		onReady() {
+			this.hotSearch()
+			this.historySearch()
+			this.getList()
+			this.getProvince()
+			this.getKind()
+			this.getIdentity()
+		},
+		methods: {
+			// 清理数据
+			clearData() {
+				this.page = 1
+				this.areaArray = []
+				this.kindArray = []
+				this.checkedAreaData = []
+			},
+			// 搜索
+			searchFun() {
+				this.log_centent = false, //判断是历史记录
+					this.list_centent = true, //判断是列表
+					// return
+					// this.hotSearchCount()
+					this.getList()
+			},
+			returnLongPage() {
+				this.log_centent = true //判断是历史记录
+				this.list_centent = false //判断是列表
+			},
+			// 获取身份
+			getIdentity() {
+				this.$http.get('deal/dictData/getFirstTypeList', {
+					params: {
+						dictType: 'identity',
+					}
+				}).then(data => {
+					if (data && data.code == 200) {
+						data.result.forEach(e => {
+							e.name = e.dictLabel
+						})
+						this.idList = data.result
+					}
+				}).catch(err => {
+
+				})
+			},
+			// 删除区域
+			deleteArea(item, index) {
+				this.checkedAreaData.splice(index, index > 1 ? this.checkedAreaData.length - 1 : this.checkedAreaData.length)
+				if (item.headerIndex == '1') {
+					if (this.checkedAreaData.length == 0) {
+						this.tabListData = this.oneProvince
+					} else if (this.checkedAreaData.length == 1) {
+						this.tabListData = this.twoCity
+					} else if (this.checkedAreaData.length == 2) {
+						this.tabListData = this.thessCounty
+					} else if (this.checkedAreaData.length == 3) {
+						this.tabListData = this.thessCounty
+					}
+				} else if (item.headerIndex == '2') {
+					if (this.checkedAreaData.length == 0) {
+						this.tabListData = this.oneKind
+					} else if (this.checkedAreaData.length == 1) {
+						this.tabListData = this.twoKind
+					} else if (this.checkedAreaData.length == 2) {
+						this.tabListData = this.threeKind
+					} else if (this.checkedAreaData.length == 3) {
+						this.tabListData = this.fourKind
+					}
+				}
+				this.options[item.headerIndex].header = item.name
+			},
+			// 获取
+			onItemSelect(item) {
+				console.log(item, 'onItemSelect...')
+
+			},
+			// 点击tab栏
+			onHeaderSelect(res) {
+				this.checkedAreaData = []
+				if (res.headerIndex == 0) {
+					this.tabListData = this.gongqiuList
+
+				} else if (res.headerIndex == 1) {
+					this.tabListData = this.$store.state.provinceList
+				} else if (res.headerIndex == 2) {
+					this.tabListData = this.oneKind
+				} else if (res.headerIndex == 3) {
+					this.tabListData = this.idList
+				}
+				this.tabListData.forEach(e => {
+					e.headerIndex = res.headerIndex
+				})
+			},
+			// 选中
+			selectCentent(item, index) {
+				this.checkedColor = index
+				this.options[item.headerIndex]
+				this.options[item.headerIndex].header = item.name
+
+				// if(item.headerIndex=="1"){
+
+				// }
+
+				if (item.headerIndex == 0) {
+					if (item.label == '1') {
+						this.sta = 1
+					} else {
+						this.sta = 2
+					}
+					this.getList()
+					this.$refs.dropDown.close()
+				} else if (item.headerIndex == 1) {
+					this.checkedAreaData.push(item)
+					this.areaArray = this.checkedAreaData
+					if (this.checkedAreaData.length == '1') {
+						this.getCity(item, 'city')
+					} else if (this.checkedAreaData.length == '2') {
+						this.getCity(item, "county")
+					} else if (this.checkedAreaData.length == '3') {
+						this.$refs.dropDown.close()
+						// 开始搜索接口
+						this.getList()
+					}
+
+				} else if (item.headerIndex == 2) {
+					this.checkedAreaData.push(item)
+					this.kindArray = this.checkedAreaData
+					if (this.kindArray.length == "1") {
+						this.getTwoKind(item, 'two')
+					} else if (this.kindArray.length == "2") {
+						this.getTwoKind(item, 'three')
+					} else if (this.kindArray.length == "3") {
+						this.getTwoKind(item, 'four')
+					} else if (this.kindArray.length == "4") {
+						this.getList()
+						this.$refs.dropDown.close()
+						// 开始搜索接口
+					}
+					// three
+				} else if (item.headerIndex == 3) {
+					this.identity = item.dictCode
+					this.getList()
+					this.$refs.dropDown.close()
+				}
+
+			},
+			// 获取品类接口
+			getKind() {
+				this.$http.get('deal/dictData/getFirstTypeList', {
+					params: {
+						dictType: 'animalTypeDict',
+					}
+				}).then(data => {
+					if (data && data.code == 200) {
+						data.result.forEach((e) => {
+							e.name = e.dictLabel
+						})
+						this.oneKind = data.result
+					}
+				}).catch(err => {})
+			},
+			// 获取品类数据
+			getTwoKind(item, s) {
+				this.$http.get('deal/dictData/getSubTypeList', {
+					params: {
+						dictCode: item.dictCode
+					}
+				}).then(data => {
+					if (data && data.code == 200) {
+						if (data.result.length == '0') {
+							this.getList()
+							this.$refs.dropDown.close()
+						}
+						data.result.forEach((e) => {
+							e.name = e.dictLabel
+							e.headerIndex = "2"
+						})
+						if (s == "two") {
+							this.twoKind = data.result
+
+						} else if (s == "three") {
+							this.threeKind = data.result
+						} else if (s == "four") {
+							this.fourKind = data.result
+						}
+						this.tabListData = data.result
+					}
+				}).catch(err => {
+
+				})
+			},
+			// 获取市级城市
+			getCity(e, s) {
+				this.$http.get('deal/provinceCity/getProvinceCity', {
+					params: {
+						pid: e.id
+					},
+				}).then(data => {
+					if (data && data.code === 200) {
+						data.result.forEach(i => {
+							i.headerIndex = e.headerIndex
+						})
+						if (s == 'city') {
+							this.twoCity = data.result
+						} else if (s == 'county') {
+							this.thessCounty = data.result
+						}
+						this.tabListData = data.result
+
+					} else {
+						uni.showToast({
+							icon: 'none',
+							title: `温馨提示：${data.msg}`
+						});
+					}
+				}).catch(err => {
+
+				})
+			},
+
+			returnPage() {
+				uni.switchTab({
+					url: '/pages/Home/Home'
+				})
+			},
+			// 删除历史
+			deltem(index) {
+				var this_ = this
+				uni.showModal({
+					title: "温馨提示",
+					content: "您确定要删除该条数据吗？",
+					cancelText: "取消",
+					confirmText: "确定",
+					confirmColor: "#61D86E",
+					success(res) {
+						if (res.confirm) {
+							this_.historyData.splice(index, 1)
+						}
+					}
+				})
+			},
+			// 点击添加搜索
+			hotSearchCount(count) {
+				this.title = count
+				this.clearData()
+				if (this.sta == 1) {
+					this.getSearchGy();
+				} else if (this.sta == 2) {
+					this.getSearchQG()
+				}
+			},
+			// 获取省级数据
+			getProvince() {
+				this.$http.get('deal/provinceCity/getProvinceCity', {
+					params: {
+						state: '1'
+					},
+				}).then(data => {
+					if (data && data.code === 200) {
+						this.oneProvince = data.result
+						this.$store.commit('provinceListFun', data.result)
+					} else {
+						uni.showToast({
+							icon: 'none',
+							title: `温馨提示：${data.msg}`
+						});
+					}
+				}).catch(err => {
+
+				})
+			},
+			// 首页数据
+			getList() {
+				var data = {
+					// type: '0',
+					title: this.title,
+					pageSize: this.pageSize,
+					page: this.page,
+					userId: uni.getStorageSync("userId")
+				}
+				if (this.areaArray.length > 0) {
+					data.supplyProvince = this.areaArray[0].id || ""
+					data.supplyCity = this.areaArray[1].id || ""
+					data.supplyCounty = this.areaArray[2].id || ""
+				}
+				if (this.kindArray.length > 0) {
+					data.classificationOne = this.kindArray[0].dictCode || ""
+					data.classificationTwo = this.kindArray[1].dictCode || ""
+					data.classificationThree = this.kindArray[2].dictCode || ""
+					data.classificationFour = this.kindArray[3].dictCode || ""
+				}
+				if (uni.getStorageSync("longitude")) {
+					data.longitude = uni.getStorageSync("longitude")
+					data.latitude = uni.getStorageSync("latitude")
+				}
+				if (this.identity) {
+					data.identity = this.identity
+				}
+				if (this.sta == '1') {
+					// 供应数据
+					this.$http.get("api/search/searchSupplyInfo", {
+						params: data
+					}).then(data => {
+						if (data && data.code == 200) {
+							this.listData = data.result.records
+						}
+					}).catch(err => {})
+				} else if (this.sta == '2') {
+					// 供应数据
+					this.$http.get("api/search/purchaseInfo", {
+						params: data
+					}).then(data => {
+						if (data && data.code == 200) {
+							this.listData = data.result.records
+						}
+					}).catch(err => {})
+				}
+
+			},
+			// 请求后台求购数据
+			getSearchQG(sta) {
+				this.$http.get('deal/search/loginSearch', {
+					params: {
+						currentLat: uni.getStorageSync("longitude"),
+						currentLon: uni.getStorageSync("latitude"),
+						userId: uni.getStorageSync('userId'),
+						title: this.title
+					},
+				}).then(data => {
+					if (data && data.code === 200) {
+						this.log_centent = false
+						this.list_centent = true
+						this.listData = data.result.records
+					} else {
+						uni.showToast({
+							icon: 'none',
+							title: `温馨提示：${data.msg}`
+						});
+					}
+				}).catch(err => {
+
+				})
+			},
+			// 请求后台供应数据
+			getSearchGy(sta) {
+				this.$http.get('deal/search/loginSearch', {
+					params: {
+						currentLat: uni.getStorageSync("longitude"),
+						currentLon: uni.getStorageSync("latitude"),
+						userId: uni.getStorageSync('userId'),
+						title: this.title
+					},
+				}).then(data => {
+					if (data && data.code === 200) {
+						this.log_centent = false
+						this.list_centent = true
+						// this.listData = data.result.records
+					} else {
+						uni.showToast({
+							icon: 'none',
+							title: `温馨提示：${data.msg}`
+						});
+					}
+				}).catch(err => {
+
+				})
+			},
+			// 切换供应和求购信息
+			getTabInfo(sta) {
+				this.sta = sta
+				if (sta == 1) {
+					this.getSearchGy()
+				} else if (sta == 2) {
+					this.getSearchQG()
+				}
+			},
+			// 热门搜索
+			hotSearch(hotPage = 1) {
+
+				this.$http.get('deal/supplyPurchaseSearchLog/getTopSearch', {
+					params: {
+						page: hotPage,
+						pageSize: 10
+					},
+				}).then(data => {
+					if (data && data.code === 200) {
+						this.hotPage = data.result.pages
+						this.hotData = data.result.records
+					} else {
+						uni.showToast({
+							icon: 'none',
+							title: `温馨提示：${data.msg}`
+						});
+					}
+				}).catch(err => {
+
+				})
+			},
+			// 个人搜索历史记录
+			historySearch(oneselfHistoryPage = 1) {
+				this.$http.get('deal/supplyPurchaseSearchLog/getByPage', {
+					params: {
+						page: oneselfHistoryPage,
+						pageSize: 15,
+					}
+				}).then(data => {
+					this.historyData = data.result.records
+					this.oneselfHistoryPage = data.result.pages
+				}).catch(err => {
+
+				})
+			},
+		}
+	}
+</script>
+
+<style lang="scss">
+	.searchPage {
+		height: 100vh;
+	}
+
+	.leftReturn {
+		color: #666;
+		font-size: 42rpx;
+	}
+
+	.top {
+		// padding-top: 18rpx;
+		// background-color: #ffffff;
+
+		.top_box {
+			display: flex;
+			align-items: center;
+
+			.top_box_left {
+				height: 68rpx;
+				background-color: #efefef;
+				// border: 1rpx solid #666;
+				display: inline-block;
+				width: 466rpx;
+				display: flex;
+				align-items: center;
+
+				.search-placeholder {
+					margin-left: 11rpx;
+
+				}
+
+				text {
+					margin-left: 20rpx;
+					color: #999;
+				}
+			}
+
+			span {
+				margin-left: 20rpx;
+
+				button {
+					height: 68rpx;
+					width: 144rpx;
+					line-height: 68rpx;
+					font-size: 30rpx;
+					color: #fff;
+					background: linear-gradient(0deg, #5BC7A6, #11D48D, #5BC7A6);
+					// padding: 19rpx 40rpx;
+				}
+
+			}
+		}
+	}
+
+	.tabClass {
+		// border: 1rpx solid #666;
+		margin-top: 36rpx;
+		color: #999;
+		font-size: 34rpx;
+
+		view {
+			padding-left: 178rpx;
+
+			text {
+				display: inline-block;
+				padding-bottom: 21rpx;
+				// border-bottom: 1rpx solid #11D48D;
+			}
+
+			span {
+				margin-left: 214rpx;
+				display: inline-block;
+				padding-bottom: 21rpx;
+				// border-bottom: 1rpx solid #11D48D;
+			}
+
+		}
+	}
+
+	.hot_search {
+		height: 283rpx;
+		margin-top: 35rpx;
+		color: #999;
+
+		.hot_search_top {
+			display: flex;
+			justify-content: space-between;
+			height: 25rpx;
+			align-items: center;
+			// background-color: #ff0000;
+
+			span {
+				margin-left: 17rpx;
+				color: #333;
+				font-weight: bold;
+				font-size: 32rpx;
+				// font-weight: 500;
+			}
+
+			view {
+				font-size: 28rpx;
+				font-weight: 500;
+				display: flex;
+				align-items: center;
+
+				img {
+					margin-right: 10rpx;
+					display: inline-block;
+					width: 23rpx;
+					height: 23rpx;
+					background-size: 23rpx, 23rpx;
+					background-image: url('../../static/img/jiaoyiImg/形状 31@2x.png');
+				}
+			}
+		}
+
+
+
+		.hot_search_list {
+
+			margin-top: 25rpx;
+
+			view {
+				display: inline-block;
+				padding: 11rpx 23rpx;
+				margin-right: 33rpx;
+				background-color: #F5F5F5;
+				border-radius: 10rpx;
+				margin-top: 10rpx;
+				font-size: 24rpx;
+			}
+		}
+	}
+
+	.history_list {
+		margin-top: 55rpx;
+
+		.history_list_top {
+			display: flex;
+			justify-content: space-between;
+
+			span {
+				font-size: 32rpx;
+				margin-left: 17rpx;
+				font-weight: bold;
+				color: #333333;
+				// font-size: 28rpx;
+			}
+
+			view {
+				margin-right: 16rpx;
+				width: 26rpx;
+				height: 26rpx;
+				background-size: 26rpx, 26rpx;
+				background-image: url(../../static/img/jiaoyiImg/形状%2032@2x.png);
+			}
+		}
+
+		.history_list_list {
+			padding: 0 6rpx;
+			font-size: 24rpx;
+			font-weight: 400;
+			color: #121212;
+
+			.centent_title {
+				display: inline-block;
+				width: 570rpx;
+				// background-color: #ff0000;
+			}
+
+			view {
+				padding: 19rpx 0;
+				border-bottom: 1rpx solid #f1f1f1;
+				position: relative;
+
+				.time {
+					margin-left: 10rpx;
+					width: 21rpx;
+					height: 21rpx;
+					background-size: 21rpx, 21rpx;
+					background-image: url(../../static/img/jiaoyiImg/形状%2033@2x.png);
+				}
+
+				span {
+					margin-left: 11rpx;
+				}
+
+				.cuo {
+					width: 16rpx;
+					height: 16rpx;
+					background-size: 16rpx, 16rpx;
+					background-image: url(../../static/img/jiaoyiImg/圆角矩形%208%20拷贝@2x.png);
+					position: absolute;
+					right: 20rpx;
+					top: 25rpx;
+				}
+			}
+		}
+	}
+
+	/* 弹框样式 */
+	.list_box {
+		.list_centent {
+			.tab_centent {
+				padding: 0rpx 24rpx;
+
+				.every_tab {
+					display: inline-block;
+					width: 33.3%;
+					font-size: 28rpx;
+					font-weight: 500;
+					color: #333333;
+					margin: 28rpx 0rpx;
+
+					text {
+						margin-top: 50rpx;
+					}
+				}
+			}
+
+			.top_title {
+				margin-top: 50rpx;
+
+				font-size: 28rpx;
+
+				.text_title {
+					padding: 20rpx 25rpx;
+					background-color: #11D48D;
+					border-radius: 8rpx;
+					color: #FFFFFF;
+
+					.xuanzhong {
+						margin-left: 45rpx;
+					}
+				}
+
+			}
+
+			.xuanze {
+				width: 33.3%;
+			}
+		}
+
+	}
+
+	.quyu {
+		display: inline-block;
+		margin-right: 20rpx;
+		width: auto;
+	}
+
+	/* 选中后tab添加下划线 */
+	.checkedsty {
+		border-bottom: 1rpx solid #11D48D;
+	}
+
+	/* 选中后变色 */
+	.checked_color {
+		color: #11D48D;
+	}
+</style>
